@@ -33,6 +33,10 @@
   .box b { color:var(--orange); display:block; }
   .box.you { border-color:var(--teal); }
   .arrow { align-self:center; color:var(--muted); }
+  .join { text-align:center; color:var(--teal); font-size:.92rem; margin:.2rem 0; }
+  .par { display:flex; flex-direction:column; gap:.4rem; flex:2 1 12rem; }
+  .par .box { flex:none; }
+  .back { text-align:right; color:var(--orange); font-size:.92rem; margin:-.3rem 0 .3rem; }
   .tag { display:inline-block; font-size:.75rem; padding:0 .45rem; border-radius:99px; border:1px solid var(--teal); color:var(--teal); }
   .tag.o { border-color:var(--orange); color:var(--orange); }
   .watch { background:#1b2a3a; border:1px dashed var(--teal); border-radius:8px; padding:.6rem .9rem; margin:.8rem 0; }
@@ -84,19 +88,25 @@
   <div class="box"><b>2 Write evals</b>write-evals makes eval.md and a mockup</div><span class="arrow">→</span>
   <div class="box you"><b>3 You approve</b>nothing is built before your yes</div>
 </div>
+<div class="join">↓ your yes starts the build (step 4 follows step 3)</div>
 <div class="flow">
   <div class="box"><b>4 Builder</b>builds from RD, eval, mockup</div><span class="arrow">→</span>
-  <div class="box"><b>5a Verifier</b>runs every eval on a real build</div>
-  <div class="box"><b>5b Reviewer</b>reads the diff for what evals miss</div><span class="arrow">→</span>
+  <div class="par">
+    <div class="box"><b>5a Verifier</b>runs every eval on a real build</div>
+    <div class="box"><b>5b Reviewer</b>reads the diff for what evals miss (runs at the same time as 5a)</div>
+  </div><span class="arrow">→</span>
   <div class="box"><b>6 Triage</b>you-the-orchestrator run the gate, merge findings</div><span class="arrow">→</span>
-  <div class="box"><b>Repeat</b>max 5 rounds, then stop and ask you</div>
+  <div class="box"><b>Repeat?</b>fix list goes back to step 4. Max 5 rounds, then stop and ask you</div>
 </div>
+<div class="back">↺ back to step 4 while checks fail and rounds remain</div>
+<div class="join">↓ when the gate passes</div>
 <div class="flow">
   <div class="box"><b>7 Done gate</b>hook refuses "done" unless every eval is PASS</div><span class="arrow">→</span>
   <div class="box"><b>8 First-time user</b>a fresh agent tries the live app</div><span class="arrow">→</span>
   <div class="box"><b>9 Fix a bug</b>reproduce, find the cause, fix, add a regression check</div><span class="arrow">→</span>
   <div class="box"><b>10 Learn</b>repeat mistakes become one line in REVIEW.md</div>
 </div>
+<p>Read the boxes in number order. Steps 4 to 6 repeat until the gate passes or the loop stops.</p>
 <p>Your part is small and on purpose: you decide <i>what</i> to build, you approve the evals, you answer when the loop asks a product question, and you read the evidence. Agents do the building, the checking and the reviewing.</p>
 
 <h2 id="words">3. Words you need</h2>
