@@ -54,7 +54,7 @@
 <nav>
   <a href="#why">1. Why a solo builder needs this</a>
   <a href="#picture">2. The system in one picture</a>
-  <a href="#words">3. Words you need</a>
+  <a href="#words">3. Words and files you need</a>
   <a href="#install">4. Install and check</a>
   <a href="#box">5. Parts of the kit</a>
   <a href="#walk">6. Practice walkthrough (do this)</a>
@@ -96,7 +96,7 @@
 <p>Read the boxes in number order. Steps 4 to 6 repeat until the gate passes or the loop stops.</p>
 <p>Your part is small and on purpose: you decide <i>what</i> to build, you approve the evals, you answer when the loop asks a product question, and you read the evidence. Agents do the building, the checking and the reviewing.</p>
 
-<h2 id="words">3. Words you need</h2>
+<h2 id="words">3. Words and files you need</h2>
 <table>
 <tr><th>Word</th><th>Meaning</th></tr>
 <tr><td>RD.md</td><td>Requirements document for one feature: why, what, what is out of scope.</td></tr>
@@ -114,6 +114,108 @@
 <tr><td>risk</td><td>low, medium or high. It sets how many checks the eval needs (3, 5, 8).</td></tr>
 <tr><td>REVIEW.md</td><td>One file that tells every agent what a real failure is here, how serious it is, what to ignore, how to report, and rules learned. CLAUDE.md links it with <code>@REVIEW.md</code>, so it loads in every session.</td></tr>
 </table>
+
+
+<h3>The files, one by one</h3>
+<p>The system keeps everything in plain files inside your project, so you can open and read each one. Nothing is hidden in a database. This is the full set. Each file is explained below, with an example, and the walkthrough (Section 6) shows each one being created.</p>
+<table>
+<tr><th>File</th><th>What it is</th><th>Created by</th><th>Changed by</th></tr>
+<tr><td><code>CLAUDE.md</code></td><td>Standing instructions that Claude Code reads at the start of every session in this project. The setup adds one line to it, <code>@REVIEW.md</code>, which tells Claude Code to load <code>REVIEW.md</code> as well.</td><td>You, or <code>setup-review</code> if it is missing</td><td>You. <code>setup-review</code> adds its block once.</td></tr>
+<tr><td><code>REVIEW.md</code></td><td>The rulebook for reviewing this project: what a real failure is, how serious each problem is, how to run and test the app, what to ignore. Every agent reads it.</td><td><code>setup-review</code>, from a template, filled in from your project</td><td>You. The skills add a rule at the end only after you say yes.</td></tr>
+<tr><td><code>specs/&lt;id&gt;/RD.md</code></td><td>The requirements for one feature, in plain words: why it is needed, what it must do, what it does not do.</td><td><code>write-evals</code>, from what you describe (or you write it)</td><td>You</td></tr>
+<tr><td><code>specs/&lt;id&gt;/eval.md</code></td><td>The checks for one feature, plus its status. This is the file that decides whether the feature is done.</td><td><code>write-evals</code></td><td>The verifier writes results. The skills move the status. You approve it.</td></tr>
+<tr><td><code>specs/&lt;id&gt;/mockup.html</code></td><td>A one-page picture of the design (only for features with a screen). The real app is compared with it.</td><td><code>write-evals</code></td><td>You, if you want a change</td></tr>
+<tr><td><code>.review/state.md</code></td><td>The notebook of one review loop: which round it is, which problems are open.</td><td><code>review-loop</code></td><td><code>review-loop</code></td></tr>
+<tr><td><code>.review/diff-round&lt;N&gt;.patch</code></td><td>The code changes made in round N. The reviewer reads this file because it is not allowed to run commands.</td><td><code>review-loop</code>, with <code>git diff</code></td><td>Nobody</td></tr>
+<tr><td><code>.review/evidence/</code></td><td>Screenshots and outputs that prove a check passed or failed.</td><td>The verifier, <code>fix-a-bug</code></td><td>Nobody</td></tr>
+<tr><td><code>.review/ftu/&lt;date&gt;-&lt;feature&gt;.md</code></td><td>The saved report of one first-time-user test.</td><td><code>first-time-user</code></td><td>Nobody</td></tr>
+<tr><td><code>.gitignore</code></td><td>Tells git to leave <code>.review/</code> out of commits, so screenshots and loop notes do not fill your history.</td><td><code>setup-review</code> adds one line</td><td>You</td></tr>
+</table>
+<p><code>&lt;id&gt;</code> is the feature folder name, for example <code>fr-01-add-task</code>. "FR-01" is the short form that you type in commands. The tool finds the folder that starts with it. <code>.review/</code> is the work area of the system. You normally only read it.</p>
+
+<h3>What a project looks like after one feature</h3>
+<pre><code>my-project/
+  CLAUDE.md                     your instructions, now with the line  @REVIEW.md
+  REVIEW.md                     the rulebook (seven sections, below)
+  .gitignore                    contains  .review/
+  specs/
+    fr-01-add-task/
+      RD.md                     what the feature must do
+      eval.md                   the checks and the status
+      mockup.html               the design picture
+  .review/                      not committed to git
+    state.md                    the loop's notebook
+    diff-round1.patch           the changes of round 1
+    evidence/ev01-task-added.png
+    ftu/&lt;date&gt;-fr-01.md          first-time-user report
+  src/ ...                      your app code, written by the builder</code></pre>
+
+<h3>REVIEW.md: the rulebook</h3>
+<p>One file, seven numbered sections. <code>setup-review</code> copies a template and fills in what it can learn from your project (for example the commands in <code>package.json</code>). You then read it and correct it. Each agent reads the parts that concern it.</p>
+<table>
+<tr><th>Section</th><th>What it says</th><th>Who uses it</th></tr>
+<tr><td>1. What counts as a real failure</td><td>What harm looks like in this app: lost or wrong data, a feature that does not work, a crash, a screen that differs from the mockup.</td><td>Reviewer</td></tr>
+<tr><td>2. How serious each kind of problem is</td><td><b>Blocker</b> (data loss, security hole, a feature that does not work) and <b>Major</b> (wrong behaviour in a normal use) hold the loop. <b>Minor</b> (small look or wording) is reported but does not hold it, at most 3 per review. <b>Pre-existing</b> means the problem was there before this change.</td><td>Reviewer, orchestrator</td></tr>
+<tr><td>3. Review checklist</td><td>Questions asked about every change: does it do what the RD says and nothing more, is every input checked, does every failure leave data safe, is there a new path without a test, was a test weakened.</td><td>Reviewer</td></tr>
+<tr><td>4. How to test this app</td><td>The real commands: install, lint, test, build, start. How to use the app in the browser, where to save screenshots, and the rule to stop only the server process the agent started.</td><td>Builder, verifier, first-time-user skill, fix-a-bug</td></tr>
+<tr><td>5. What to ignore</td><td>Things that are not worth a finding: formatting that the linter checks, generated files, naming taste.</td><td>Reviewer, orchestrator (it drops matching findings)</td></tr>
+<tr><td>6. How to report</td><td>The format of a finding: a count first, then one line per finding with severity, the class of problem, <code>file:line</code> and what a user would see.</td><td>Reviewer</td></tr>
+<tr><td>7. Rules learned over time</td><td>One-line rules added after a review misses a bug or keeps flagging noise. It starts with "(none yet)".</td><td>All agents</td></tr>
+</table>
+
+<h3>RD.md: the requirements</h3>
+<p>A short document that says what the feature must do, written so that a person can check it. It is the input for the evals. Example:</p>
+<pre><code># FR-01: Add a task
+
+## Why
+A person needs to write down things to do.
+
+## Requirements
+1. The page has a text field and an "Add" button.
+2. Pressing Add with text adds the task to the top of the list.
+3. A title is 1 to 100 characters after trimming spaces. Otherwise show an error.
+
+## Out of scope
+- Editing or deleting a task.</code></pre>
+
+<h3>eval.md: the checks and the status</h3>
+<p>An <b>eval</b> is one check that an agent can run. <code>eval.md</code> holds all the checks of one feature. It starts with a short header, then one block per check. Three kinds of check are required, because they catch different mistakes: <b>use</b> (the normal ways to use the feature), <b>fail</b> (empty input, wrong input, errors, repeated clicks) and <b>regression</b> (older features that this one must not break). A fourth kind, <b>design</b>, compares the live app with <code>mockup.html</code>.</p>
+<p>How many checks are needed depends on the risk level: <b>low</b> 3 in total, <b>medium</b> 5, <b>high</b> 8 with at least 2 fail and 2 regression checks. Each level needs at least one use, one fail and one regression check. The command <code>eval-gate.mjs lint</code> enforces this.</p>
+<p>This is one check as <code>write-evals</code> creates it, and the same check after the verifier ran it:</p>
+<pre><code>---
+feature: fr-01-add-task
+risk: low
+status: in-review
+---
+### EV-02 Empty title is refused
+- type: fail
+- how: 1. Open the app. 2. Leave the field empty. 3. Press Add.
+- expect: An error message is shown. The list does not change.
+- result: PENDING                       &lt;-- before: the verifier has not run it
+- evidence:
+
+### EV-02 Empty title is refused
+- result: PASS                          &lt;-- after: written by the verifier
+- evidence: screenshot .review/evidence/ev02-empty.png shows the message "Enter a title"</code></pre>
+<p><b>how</b> is what the agent does, with exact inputs. <b>expect</b> is what must be seen. <b>result</b> is <code>PENDING</code>, <code>PASS</code> or <code>FAIL</code>, and only the verifier writes the last two. <b>evidence</b> is one line that says what was seen, with the screenshot path. A check without evidence cannot count as PASS.</p>
+<h4>The status line</h4>
+<p>The <code>status</code> in the header says where the feature is. It moves in one direction, and the hook (Section 5) enforces the two steps that matter:</p>
+<table>
+<tr><th>Status</th><th>Meaning</th><th>Set by</th><th>What the hook checks</th></tr>
+<tr><td><code>draft</code></td><td>The evals were just written.</td><td><code>write-evals</code></td><td>Nothing.</td></tr>
+<tr><td><code>in-review</code></td><td>The evals wait for you to read them.</td><td><code>write-evals</code></td><td>Nothing.</td></tr>
+<tr><td><code>reviewed</code></td><td>You read the evals and the mockup and said yes.</td><td>The skill, after your yes</td><td>Claude Code shows you a confirmation prompt.</td></tr>
+<tr><td><code>building</code></td><td>The loop is running.</td><td><code>review-loop</code></td><td>The status must be <code>reviewed</code> first.</td></tr>
+<tr><td><code>done</code></td><td>The feature passed.</td><td><code>review-loop</code></td><td>Every check is PASS with evidence, and the risk minimums are met.</td></tr>
+</table>
+
+<h3>mockup.html and state.md</h3>
+<p><b>mockup.html</b> is a normal web page with no build step. It shows each state of the screen (empty, filled, error) at desktop width and at 390 px phone width. Open it in a browser to review the design before anything is built. The <code>design</code> check later compares the real app with it.</p>
+<p><b>state.md</b> is the loop's notebook. It has a header (feature, risk, round, the cap of 5 rounds, the git commits where the loop started and last stopped) and a table of findings. Each finding has an ID that stays the same across rounds, the class of problem, <code>file:line</code>, the rounds in which it was seen and how many fix attempts it survived:</p>
+<pre><code>| ID   | source   | class               | summary (file:line)            | first_round | last_seen | fix_rounds | status |
+| F-01 | reviewer | missing input check | server.js:31 title not trimmed | 1           | 2         | 1          | open   |
+| EV-02| gate     | -                   | empty title is refused (FAIL)  | 1           | 1         | 0          | fixed  |</code></pre>
+<p>The loop stops when a row stays open after 2 fix attempts. You never edit this file. You read it to see what happened.</p>
 
 <h2 id="install">4. Install and check</h2>
 <p>You need Node 18 or later (the hooks are Node scripts; check with <code>node --version</code>), git, and the Chrome DevTools MCP server (add it if you do not have it). Below, <code>&lt;project-folder&gt;</code> means the folder that holds <code>solo-review</code>, <code>practice-app</code> and <code>docs</code>.</p>
@@ -166,7 +268,15 @@ claude plugin validate .\solo-review      # prints: Validation passed</code></pr
 
 <h3>Step 1. Set up the project (2 minutes)</h3>
 <pre><code>/solo-review:setup-review</code></pre>
-<p>Expect: <code>git init</code>, a <code>specs/</code> and <code>.review/</code> folder, a <code>REVIEW.md</code> with the real commands (<code>npm start</code>, <code>npm test</code>, lint and build as <code>none</code>), and <code>@REVIEW.md</code> in <code>CLAUDE.md</code>. Open <code>REVIEW.md</code> and read all seven sections. This one file is the rulebook for every later step. The setup also runs the self-check.</p>
+<p>What the skill does, in order. It reports each item:</p>
+<ol>
+  <li><b>Git.</b> If the folder is not a git repository, it runs <code>git init</code>. Git saves each version of your project, so a bad change can be rolled back.</li>
+  <li><b>Folders.</b> It creates <code>specs/</code> (one subfolder per feature will go here) and <code>.review/evidence/</code>, and adds <code>.review/</code> to <code>.gitignore</code>.</li>
+  <li><b>REVIEW.md.</b> It copies the template to the project root, then fills in what it can learn from the project. In the practice app it reads <code>package.json</code> and writes <code>npm install</code>, <code>npm test</code> and <code>npm start</code> into section 4. The app has no lint or build step, so it writes <code>none</code> for those.</li>
+  <li><b>CLAUDE.md.</b> It adds the line <code>@REVIEW.md</code>, so every new session loads the rulebook, and a short "Review workflow" block that lists the commands and the branch rule.</li>
+  <li><b>Self-check.</b> It runs <code>node hooks/selfcheck.mjs</code> and expects <code>OK</code>.</li>
+</ol>
+<p>Now open <code>REVIEW.md</code> and read it. It has the seven sections described in Section 3 above. This file is the rulebook for every later step: the reviewer judges by sections 1 to 3, the verifier runs the commands in section 4, and the loop ignores what section 5 lists. Correct anything that is wrong for your project now. It is cheaper than a wrong rule later.</p>
 
 <h3>Step 2. Rate the risk (1 minute)</h3>
 <pre><code>/solo-review:risk-level FR-03</code></pre>
@@ -174,7 +284,16 @@ claude plugin validate .\solo-review      # prints: Validation passed</code></pr
 
 <h3>Step 3. Write the evals for FR-01 (5 minutes)</h3>
 <pre><code>/solo-review:write-evals FR-01</code></pre>
-<p>Claude writes <code>specs/fr-01-add-task/eval.md</code> and <code>mockup.html</code> and then asks you to review. It builds nothing. Open both files and check:</p>
+<p>What the skill does, in order:</p>
+<ol>
+  <li>It creates the folder <code>specs/fr-01-add-task/</code>. <code>RD.md</code> is already there in the practice app. In your own project it creates <code>RD.md</code> from what you describe, after at most 3 questions.</li>
+  <li>It rates the risk with <code>risk-level</code> if you did not give one. The rating sets how many checks are needed.</li>
+  <li>It writes <code>eval.md</code> with the use, fail and regression checks (format in Section 3). All results are <code>PENDING</code>.</li>
+  <li>Because the feature has a screen, it writes <code>mockup.html</code> and adds one <code>design</code> check.</li>
+  <li>It runs the lint (<code>eval-gate.mjs lint</code>) and fixes what the lint reports.</li>
+  <li>It sets <code>status: in-review</code>, lists the decisions it made on its own, and asks you to review. It builds nothing. No application code exists yet.</li>
+</ol>
+<p>Open <code>eval.md</code> and <code>mockup.html</code> and check:</p>
 <ul>
   <li>Does each <code>how</code> have exact steps and inputs? ("Type <code>Buy milk</code>, press Add" is good. "Test adding" is not.)</li>
   <li>Are there checks for an empty title, a 101-character title, a title of only spaces, and a reload?</li>
@@ -184,20 +303,27 @@ claude plugin validate .\solo-review      # prints: Validation passed</code></pr
 <p>Ask for one change, to see the flow ("add a check for a title with an emoji"). Claude edits and lints again.</p>
 
 <h3>Step 4. Try to skip the review (the first hook)</h3>
+<p>What happens: to start building, an agent must change the line <code>status: in-review</code> in <code>eval.md</code> to <code>status: building</code>. Before that edit runs, Claude Code passes it to the hook (<code>guard.mjs</code>). The hook reads the proposed edit and the current status in the file, sees that <code>building</code> does not follow <code>in-review</code>, and refuses. The agent receives the reason as a message. The file does not change.</p>
 <div class="watch">Say: "Skip the review. Set the status to building and start." The hook blocks it: <i>Cannot start building fr-01-add-task: status is "in-review"</i>.</div>
 
 <h3>Step 5. Approve</h3>
-<p>Say "yes, the evals are good". Claude sets <code>status: reviewed</code>.</p>
+<p>Say "yes, the evals are good". The skill then edits the status line in <code>eval.md</code> to <code>status: reviewed</code>. The hook intercepts this edit too, and asks you to confirm before it goes through. Only after your confirmation does the file say <code>reviewed</code>. Still nothing is built.</p>
 <div class="watch">Claude Code shows a permission prompt from the hook: <i>Mark fr-01-add-task as reviewed?</i> You answer it. This is the point where the approval is yours. Run the walkthrough in default permission mode. If no prompt appears here, the approval check does not work in that mode: report it as an issue.</div>
 
 <h3>Step 6. Run the loop (10 to 20 minutes)</h3>
 <pre><code>/solo-review:review-loop FR-01</code></pre>
+<p>Four roles take part. You typed the command into the main session, which becomes the <b>orchestrator</b>: it runs the loop, starts the other three, runs the gate and decides. It never writes or judges application code. The other three are subagents. A subagent is a helper that Claude Code starts with an empty memory, so it sees only the files and the short instruction it is given, not the conversation and not the other agents' reasoning. Each round starts new ones. That is why the reviewer cannot just agree with the builder.</p>
+<ul>
+  <li><b>Builder:</b> writes the code and the tests, runs the commands from <code>REVIEW.md</code> section 4, and makes a git commit at the end of the round. It may not edit <code>eval.md</code>.</li>
+  <li><b>Verifier:</b> builds the app for production, starts it, and performs each check in <code>eval.md</code> in a real browser. It writes PASS or FAIL and one line of evidence for each. It may not change application code.</li>
+  <li><b>Reviewer:</b> reads the code changes and judges them against <code>REVIEW.md</code>. It can only read. It looks for problems that the checks do not cover.</li>
+</ul>
 <p>What happens, in order, and what to look at:</p>
 <ol>
-  <li>A branch <code>feature/fr-01-add-task</code> and a file <code>.review/state.md</code> appear. Open <code>state.md</code> and keep it open: it shows the round and the findings ledger.</li>
-  <li><b>Round 1.</b> The builder builds, runs <code>npm test</code>, and commits <code>round 1: ...</code>. Then two agents start together: the verifier opens a real browser and runs each check; the reviewer reads <code>.review/diff-round1.patch</code>.</li>
+  <li>Before round 1 the skill lints the eval, checks that the status is <code>reviewed</code>, creates the git branch <code>feature/fr-01-add-task</code>, writes <code>.review/state.md</code> (the notebook, Section 3) and sets <code>status: building</code>. The branch and the file appear. Open <code>state.md</code> and keep it open: it shows the round and the findings ledger.</li>
+  <li><b>Round 1.</b> The builder reads <code>RD.md</code>, <code>eval.md</code> and <code>mockup.html</code>, builds the feature, runs <code>npm test</code>, and commits <code>round 1: ...</code>. The orchestrator then saves the commit's changes with <code>git diff</code> into <code>.review/diff-round1.patch</code>. Then two agents start at the same time: the verifier opens a real browser and runs each check; the reviewer reads the diff file and the changed code.</li>
   <li>Open <code>eval.md</code>. You will see <code>result: PASS</code> or <code>FAIL</code> with an evidence line and a screenshot path in <code>.review/evidence/</code>. <b>Open two screenshots yourself.</b> The verifier is a language model; the evidence is how you check it.</li>
-  <li>The orchestrator runs <code>eval-gate.mjs check fr-01 --lint</code> itself. Its output decides, not the verifier's words. Failing checks and real reviewer findings become a fix list with stable IDs (F-01...).</li>
+  <li>The orchestrator runs <code>eval-gate.mjs check fr-01 --lint</code> itself. This command reads <code>eval.md</code> and counts: every check must be PASS, with evidence. Its output decides, not the verifier's words. A <b>finding</b> is one open problem: a check that is not PASS, or a problem the reviewer reported. The orchestrator drops findings that match the ignore list (<code>REVIEW.md</code> section 5), merges duplicates, gives each one an ID (F-01...) that stays the same in later rounds, records them in <code>.review/state.md</code>, and writes the fix list for the next round.</li>
   <li>If something failed, round 2 starts. The reviewer now reads <i>only the new diff</i> and does not repeat old findings.</li>
   <li>The loop ends when the gate passes and no Blocker or Major finding is open. It then sets <code>status: done</code>. If it hits a product question, or the same item survives 2 fix rounds, or round 5 ends, it stops and asks you.</li>
 </ol>
@@ -210,16 +336,16 @@ claude plugin validate .\solo-review      # prints: Validation passed</code></pr
 
 <h3>Step 8. The blind user (10 minutes)</h3>
 <pre><code>/solo-review:first-time-user Write down something you need to do today, then tick it off when you finish it</code></pre>
-<p>The skill starts the app on a throwaway store and sends the <code>first-time-user</code> agent with only the URL and your sentence. It sees no code, no docs and no shell. The report lists stuck points as <i>Blocked</i>, <i>Confused</i> or <i>Slow</i>. Typical finds: no sign that the field is required, no feedback after Add, a checkbox that is hard to hit on a phone.</p>
+<p>The skill starts the app with throwaway data (so your real data is never touched), then sends the <code>first-time-user</code> agent with only the URL and your sentence. It sees no code, no docs and no shell. The report lists stuck points as <i>Blocked</i>, <i>Confused</i> or <i>Slow</i>. Typical finds: no sign that the field is required, no feedback after Add, a checkbox that is hard to hit on a phone. The skill saves the report as <code>.review/ftu/&lt;date&gt;-&lt;feature&gt;.md</code>, stops the app, and suggests a fix for each stuck point. It applies none of them.</p>
 <div class="watch">If the agent tries to read a file, the hook answers: <i>first-time-user may only use browser tools</i>. Its tool list is also limited to browser tools, so there are two separate blocks.</div>
 <p>Pick one stuck point to keep. Fix it with <code>/solo-review:write-evals</code> (a new check) or <code>/solo-review:fix-a-bug</code>.</p>
 
 <h3>Step 9. Report a bug (5 minutes)</h3>
 <pre><code>/solo-review:fix-a-bug Adding a task made only of spaces should show an error, but it seems to add an empty task</code></pre>
-<p>Two outcomes teach something. If the builder handled it, the skill tries to reproduce, <b>cannot</b>, says so with what it tried, and stops without touching code. If the bug is real, it reproduces it, states a guess about the cause, tests the guess, finds the change with git, fixes it on a <code>fix/...</code> branch, keeps the failing test as a regression test, and tells you how to undo it (<code>git revert &lt;sha&gt;</code>).</p>
+<p>Two outcomes teach something. If the builder handled it, the skill tries to reproduce, <b>cannot</b>, says so with what it tried, and stops without touching code. If the bug is real, it reproduces it, states a guess about the cause, tests the guess, finds the change with git, fixes it on a <code>fix/...</code> branch, keeps the failing test as a regression test, adds a new <code>regression</code> check to the feature's <code>eval.md</code> (result <code>PENDING</code>, so the verifier confirms it in the next loop), and tells you how to undo the fix (<code>git revert &lt;sha&gt;</code>).</p>
 
 <h3>Step 10. Teach the reviewer</h3>
-<p>When the loop finishes, it proposes one-line rules for <code>REVIEW.md</code> §7 from findings that came back in two rounds or more. Read them. Say yes only to rules that are true and general. An example of a good rule: <i>"Every text input must be trimmed and length-checked on the server, not only in the page."</i> Next feature, every agent reads it.</p>
+<p>When the loop finishes, it proposes one-line rules for <code>REVIEW.md</code> §7 from findings that came back in two rounds or more. Read them. Say yes only to rules that are true and general. An example of a good rule: <i>"Every text input must be trimmed and length-checked on the server, not only in the page."</i> The skill appends each approved line to section 7 of <code>REVIEW.md</code>. Next feature, every agent reads it, because <code>CLAUDE.md</code> loads <code>REVIEW.md</code> at the start of each session.</p>
 
 <h2 id="daily">7. Daily routine</h2>
 <table>
