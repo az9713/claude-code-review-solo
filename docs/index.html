@@ -28,15 +28,16 @@
   th { background:var(--card); color:var(--text); }
   nav { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:.8rem 1.2rem; margin:1.5rem 0; columns: 2; column-gap:2rem; }
   nav a { display:block; text-decoration:none; padding:.1rem 0; }
-  .flow { display:flex; flex-wrap:wrap; gap:.5rem; align-items:stretch; margin:1rem 0; }
-  .box { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.5rem .8rem; font-size:.92rem; flex:1 1 9rem; }
-  .box b { color:var(--orange); display:block; }
-  .box.you { border-color:var(--teal); }
-  .arrow { align-self:center; color:var(--muted); }
-  .join { text-align:center; color:var(--teal); font-size:.92rem; margin:.2rem 0; }
-  .par { display:flex; flex-direction:column; gap:.4rem; flex:2 1 12rem; }
-  .par .box { flex:none; }
-  .back { text-align:right; color:var(--orange); font-size:.92rem; margin:-.3rem 0 .3rem; }
+  .graph { overflow-x:auto; margin:1rem 0; }
+  .graph svg { min-width:760px; width:100%; height:auto; display:block; }
+  .graph .n rect { fill:var(--card); stroke:var(--line); stroke-width:1.5; }
+  .graph .n.you rect { stroke:var(--teal); }
+  .graph .t { fill:var(--orange); font:700 15px system-ui,sans-serif; }
+  .graph .d { fill:var(--text2); font:12.5px system-ui,sans-serif; }
+  .graph .e { fill:none; stroke:var(--muted); stroke-width:2; }
+  .graph .e.loop { stroke:var(--orange); stroke-dasharray:7 5; }
+  .graph .l { fill:var(--teal); font:12.5px system-ui,sans-serif; }
+  .graph .l.o { fill:var(--orange); }
   .tag { display:inline-block; font-size:.75rem; padding:0 .45rem; border-radius:99px; border:1px solid var(--teal); color:var(--teal); }
   .tag.o { border-color:var(--orange); color:var(--orange); }
   .watch { background:#1b2a3a; border:1px dashed var(--teal); border-radius:8px; padding:.6rem .9rem; margin:.8rem 0; }
@@ -83,29 +84,15 @@
 </div>
 
 <h2 id="picture">2. The system in one picture</h2>
-<div class="flow">
-  <div class="box"><b>1 Rate risk</b>risk-level: low, medium or high</div><span class="arrow">→</span>
-  <div class="box"><b>2 Write evals</b>write-evals makes eval.md and a mockup</div><span class="arrow">→</span>
-  <div class="box you"><b>3 You approve</b>nothing is built before your yes</div>
-</div>
-<div class="join">↓ your yes starts the build (step 4 follows step 3)</div>
-<div class="flow">
-  <div class="box"><b>4 Builder</b>builds from RD, eval, mockup</div><span class="arrow">→</span>
-  <div class="par">
-    <div class="box"><b>5a Verifier</b>runs every eval on a real build</div>
-    <div class="box"><b>5b Reviewer</b>reads the diff for what evals miss (runs at the same time as 5a)</div>
-  </div><span class="arrow">→</span>
-  <div class="box"><b>6 Triage</b>you-the-orchestrator run the gate, merge findings</div><span class="arrow">→</span>
-  <div class="box"><b>Repeat?</b>fix list goes back to step 4. Max 5 rounds, then stop and ask you</div>
-</div>
-<div class="back">↺ back to step 4 while checks fail and rounds remain</div>
-<div class="join">↓ when the gate passes</div>
-<div class="flow">
-  <div class="box"><b>7 Done gate</b>hook refuses "done" unless every eval is PASS</div><span class="arrow">→</span>
-  <div class="box"><b>8 First-time user</b>a fresh agent tries the live app</div><span class="arrow">→</span>
-  <div class="box"><b>9 Fix a bug</b>reproduce, find the cause, fix, add a regression check</div><span class="arrow">→</span>
-  <div class="box"><b>10 Learn</b>repeat mistakes become one line in REVIEW.md</div>
-</div>
+<div class="graph"><svg viewBox="0 0 1080 624" role="img" aria-labelledby="gt gd">
+<title id="gt">The solo-review system as a graph</title>
+<desc id="gd">Steps 1, 2 and 3 run left to right. Step 3 leads down to step 4. Step 4 leads to steps 5a and 5b, which both lead to step 6. Step 6 returns to step 4 when the gate fails, and leads to step 7 when it passes. Step 7 leads down to step 8, then 9, then 10.</desc>
+<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#94a3b8"/></marker>
+<marker id="aho" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#fb923c"/></marker></defs>
+<path class="e " d="M500 62H580" marker-end="url(#ah)"/><path class="e " d="M780 62H860" marker-end="url(#ah)"/><path class="e " d="M960 104V260" marker-end="url(#ah)"/><path class="e " d="M860 302L780 222" marker-end="url(#ah)"/><path class="e " d="M860 302L780 382" marker-end="url(#ah)"/><path class="e " d="M580 222L500 302" marker-end="url(#ah)"/><path class="e " d="M580 382L500 302" marker-end="url(#ah)"/><path class="e " d="M300 302H220" marker-end="url(#ah)"/><path class="e " d="M120 344V520" marker-end="url(#ah)"/><path class="e " d="M220 562H300" marker-end="url(#ah)"/><path class="e " d="M500 562H580" marker-end="url(#ah)"/><path class="e loop" d="M400 344V470H960V344" marker-end="url(#aho)"/>
+<g class="n"><rect x="300" y="20" width="200" height="84" rx="9"/><text class="t" x="314" y="44">1 Rate risk</text><text class="d" x="314" y="64">risk-level: low, medium,</text><text class="d" x="314" y="80">or high</text></g><g class="n"><rect x="580" y="20" width="200" height="84" rx="9"/><text class="t" x="594" y="44">2 Write evals</text><text class="d" x="594" y="64">write-evals makes eval.md</text><text class="d" x="594" y="80">and a mockup</text></g><g class="n you"><rect x="860" y="20" width="200" height="84" rx="9"/><text class="t" x="874" y="44">3 You approve</text><text class="d" x="874" y="64">nothing is built before</text><text class="d" x="874" y="80">your yes</text></g><g class="n"><rect x="860" y="260" width="200" height="84" rx="9"/><text class="t" x="874" y="284">4 Builder</text><text class="d" x="874" y="304">builds from RD, eval and</text><text class="d" x="874" y="320">mockup. Later rounds fix</text><text class="d" x="874" y="336">the fix list</text></g><g class="n"><rect x="580" y="180" width="200" height="84" rx="9"/><text class="t" x="594" y="204">5a Verifier</text><text class="d" x="594" y="224">runs every eval on a real</text><text class="d" x="594" y="240">build (parallel with 5b)</text></g><g class="n"><rect x="580" y="340" width="200" height="84" rx="9"/><text class="t" x="594" y="364">5b Reviewer</text><text class="d" x="594" y="384">reads the diff for what</text><text class="d" x="594" y="400">evals miss (parallel)</text></g><g class="n"><rect x="300" y="260" width="200" height="84" rx="9"/><text class="t" x="314" y="284">6 Triage</text><text class="d" x="314" y="304">orchestrator runs the gate,</text><text class="d" x="314" y="320">merges findings, writes</text><text class="d" x="314" y="336">the fix list</text></g><g class="n"><rect x="20" y="260" width="200" height="84" rx="9"/><text class="t" x="34" y="284">7 Done gate</text><text class="d" x="34" y="304">hook refuses &quot;done&quot; unless</text><text class="d" x="34" y="320">every eval is PASS</text></g><g class="n"><rect x="20" y="520" width="200" height="84" rx="9"/><text class="t" x="34" y="544">8 First-time user</text><text class="d" x="34" y="564">a fresh agent tries the</text><text class="d" x="34" y="580">live app</text></g><g class="n"><rect x="300" y="520" width="200" height="84" rx="9"/><text class="t" x="314" y="544">9 Fix a bug</text><text class="d" x="314" y="564">reproduce, find the cause,</text><text class="d" x="314" y="580">fix, add a regression check</text></g><g class="n"><rect x="580" y="520" width="200" height="84" rx="9"/><text class="t" x="594" y="544">10 Learn</text><text class="d" x="594" y="564">repeat mistakes become one</text><text class="d" x="594" y="580">line in REVIEW.md</text></g>
+<text class="l" x="950" y="190" text-anchor="end">your yes</text><text class="l" x="260" y="290" text-anchor="middle">gate passes</text><text class="l o" x="680" y="460" text-anchor="middle">gate fails or findings open: fix list goes back to step 4</text><text class="l o" x="680" y="492" text-anchor="middle">max 5 rounds, then the loop stops and asks you</text>
+</svg></div>
 <p>Read the boxes in number order. Steps 4 to 6 repeat until the gate passes or the loop stops.</p>
 <p>Your part is small and on purpose: you decide <i>what</i> to build, you approve the evals, you answer when the loop asks a product question, and you read the evidence. Agents do the building, the checking and the reviewing.</p>
 
