@@ -1,0 +1,5 @@
+{
+  "name": "solo-review",
+  "version": "1.0.0",
+  "description": "Solo code-review system: evals, hooks, a builder/verifier/reviewer loop, a first-time-user test and a bug-fix skill."
+}

@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>solo-review: zero to hero guide</title>
+<style>
+  :root { --bg:#0f172a; --card:#1e293b; --text:#e2e8f0; --text2:#cbd5e1; --muted:#94a3b8; --orange:#fb923c; --teal:#2dd4bf; --line:#334155; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:17px/1.65 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  .wrap { max-width: 56rem; margin: 0 auto; padding: 2rem 1.25rem 5rem; }
+  h1 { font-size: 2.1rem; margin: .2rem 0 .4rem; }
+  h2 { font-size: 1.5rem; margin: 3rem 0 .6rem; padding-top: 1rem; border-top: 1px solid var(--line); color: var(--orange); }
+  h3 { font-size: 1.15rem; margin: 1.8rem 0 .4rem; color: var(--teal); }
+  p, li { color: var(--text2); }
+  a { color: var(--teal); }
+  code { background:#0b1220; border:1px solid var(--line); border-radius:4px; padding:.05rem .35rem; font:0.9em ui-monospace,Consolas,monospace; color:var(--text); }
+  pre { background:#0b1220; border:1px solid var(--line); border-radius:8px; padding:.9rem 1rem; overflow-x:auto; }
+  pre code { border:0; padding:0; background:none; }
+  .lede { color:var(--muted); font-size:1.05rem; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:1rem 1.2rem; margin:1rem 0; }
+  .card.warn { border-left:4px solid var(--orange); }
+  .card.tip { border-left:4px solid var(--teal); }
+  .card p:first-child { margin-top:0; } .card p:last-child { margin-bottom:0; }
+  table { border-collapse:collapse; width:100%; margin:1rem 0; font-size:.95rem; }
+  th, td { border:1px solid var(--line); padding:.5rem .7rem; text-align:left; vertical-align:top; }
+  th { background:var(--card); color:var(--text); }
+  nav { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:.8rem 1.2rem; margin:1.5rem 0; columns: 2; column-gap:2rem; }
+  nav a { display:block; text-decoration:none; padding:.1rem 0; }
+  .flow { display:flex; flex-wrap:wrap; gap:.5rem; align-items:stretch; margin:1rem 0; }
+  .box { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:.5rem .8rem; font-size:.92rem; flex:1 1 9rem; }
+  .box b { color:var(--orange); display:block; }
+  .box.you { border-color:var(--teal); }
+  .arrow { align-self:center; color:var(--muted); }
+  .tag { display:inline-block; font-size:.75rem; padding:0 .45rem; border-radius:99px; border:1px solid var(--teal); color:var(--teal); }
+  .tag.o { border-color:var(--orange); color:var(--orange); }
+  .watch { background:#1b2a3a; border:1px dashed var(--teal); border-radius:8px; padding:.6rem .9rem; margin:.8rem 0; }
+  .watch::before { content:"WATCH FOR THIS  "; color:var(--teal); font-weight:700; font-size:.78rem; }
+  @media (max-width:640px){ nav{columns:1} body{font-size:16px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>solo-review: zero to hero</h1>
+<p class="lede">A code-review system for one person who builds with agents. It turns the Anthropic article "How the Claude Code team does code review" and the AI Labs video into six commands, four agents and one hook. This guide explains the idea, then walks you through it on a small practice app.</p>
+
+<nav>
+  <a href="#why">1. Why a solo builder needs this</a>
+  <a href="#picture">2. The system in one picture</a>
+  <a href="#words">3. Words you need</a>
+  <a href="#install">4. Install and check</a>
+  <a href="#box">5. Parts of the kit</a>
+  <a href="#walk">6. Practice walkthrough (do this)</a>
+  <a href="#daily">7. Daily routine</a>
+  <a href="#read">8. How to read the results</a>
+  <a href="#cost">9. Cost and control</a>
+  <a href="#notin">10. What is left out, and why</a>
+  <a href="#trouble">11. If something goes wrong</a>
+  <a href="#limits">12. Honest limits</a>
+  <a href="#sources">13. Where each idea comes from</a>
+</nav>
+
+<h2 id="why">1. Why a solo builder needs this</h2>
+<p>Most of the Anthropic article is about teams: pull requests, approvals, a merge queue. <b>None of that is in this kit.</b> The kit solves a different problem, and a solo builder who works with agents has it too.</p>
+<div class="card">
+  <p><b>The problem:</b> you give an agent a task. It writes a lot of code and says "done". Later you use the app and find that it missed things you asked for. The video opens with exactly this. You are the only person who can catch it, and you only catch it by using the app yourself, after the fact.</p>
+</div>
+<p>The Claude Code team's answer has one idea under it: <b>give the agent a way to prove the work, and make something other than the builder judge the proof.</b> Anthropic reports that, from June to September 2026, merged pull requests to Claude Code more than doubled and the share that had to be reverted fell by more than 40%. That number comes from a team with many reviewers. For a solo builder the gain is smaller in absolute terms and different in kind: the gaps are found by an agent before the builder looks, not by hand after the fact.</p>
+<h3>Three causes the system targets</h3>
+<ol>
+  <li><b>The builder grades its own work.</b> It made every decision, so it agrees with itself. Fix: separate agents with a fresh context (the verifier and the reviewer).</li>
+  <li><b>"Done" has no definition.</b> Fix: evals. An eval is a check an agent can run, written <i>before</i> the build, and you approve it.</li>
+  <li><b>Mistakes repeat.</b> Claude does not remember last session. Fix: write a one-line rule into <code>REVIEW.md</code> every time the same mistake shows up.</li>
+</ol>
+<div class="card warn">
+  <p><b>When to skip it.</b> A throwaway script, a copy change, a one-file tweak: do not run the loop. The loop costs tokens (Section 9). Use it for features where "it looks done but is not" would cost you time later. Use risk <b>high</b> only for money, login, deleting data and the like.</p>
+</div>
+
+<h2 id="picture">2. The system in one picture</h2>
+<div class="flow">
+  <div class="box"><b>1 Rate risk</b>risk-level: low, medium or high</div><span class="arrow">→</span>
+  <div class="box"><b>2 Write evals</b>write-evals makes eval.md and a mockup</div><span class="arrow">→</span>
+  <div class="box you"><b>3 You approve</b>nothing is built before your yes</div>
+</div>
+<div class="flow">
+  <div class="box"><b>4 Builder</b>builds from RD, eval, mockup</div><span class="arrow">→</span>
+  <div class="box"><b>5a Verifier</b>runs every eval on a real build</div>
+  <div class="box"><b>5b Reviewer</b>reads the diff for what evals miss</div><span class="arrow">→</span>
+  <div class="box"><b>6 Triage</b>you-the-orchestrator run the gate, merge findings</div><span class="arrow">→</span>
+  <div class="box"><b>Repeat</b>max 5 rounds, then stop and ask you</div>
+</div>
+<div class="flow">
+  <div class="box"><b>7 Done gate</b>hook refuses "done" unless every eval is PASS</div><span class="arrow">→</span>
+  <div class="box"><b>8 First-time user</b>a fresh agent tries the live app</div><span class="arrow">→</span>
+  <div class="box"><b>9 Fix a bug</b>reproduce, find the cause, fix, add a regression check</div><span class="arrow">→</span>
+  <div class="box"><b>10 Learn</b>repeat mistakes become one line in REVIEW.md</div>
+</div>
+<p>Your part is small and on purpose: you decide <i>what</i> to build, you approve the evals, you answer when the loop asks a product question, and you read the evidence. Agents do the building, the checking and the reviewing.</p>
+
+<h2 id="words">3. Words you need</h2>
+<table>
+<tr><th>Word</th><th>Meaning</th></tr>
+<tr><td>RD.md</td><td>Requirements document for one feature: why, what, what is out of scope.</td></tr>
+<tr><td>eval, eval.md</td><td>A fixed check with a <code>how</code> (steps an agent can run) and an <code>expect</code> (something visible). It must be strict enough that bad work fails it. <code>eval.md</code> holds all the checks of one feature, with a result and a line of evidence each.</td></tr>
+<tr><td>mockup.html</td><td>A simple web page of the design, with every screen state at desktop and 390 px width. The real app is compared with it.</td></tr>
+<tr><td>subagent</td><td>A helper agent that the main session starts. It gets its own empty context window: it does not see the main conversation.</td></tr>
+<tr><td>fresh context</td><td>The property above. It is why a reviewer does not just agree with the builder.</td></tr>
+<tr><td>orchestrator</td><td>The main session while it runs the loop. It starts the subagents and decides. It never writes or judges app code.</td></tr>
+<tr><td>hook</td><td>A small script that Claude Code runs automatically before or after a tool call. A hook can <b>block</b> the call. An agent can ignore a rule in a prompt. It cannot ignore a hook.</td></tr>
+<tr><td>gate</td><td>The command <code>eval-gate.mjs</code>. It reads <code>eval.md</code> and says <code>GATE: PASS</code> or <code>GATE: FAIL</code>. The hook uses it too.</td></tr>
+<tr><td>finding</td><td>One problem the reviewer or an eval reports. It has an ID (F-01) that stays the same across rounds.</td></tr>
+<tr><td>class (of a finding)</td><td>The <i>kind</i> of problem, for example "missing input check". The builder fixes every instance of the class, not one line.</td></tr>
+<tr><td>round</td><td>One pass of build, then verify and review, then triage.</td></tr>
+<tr><td>status</td><td>Lives in <code>eval.md</code>: <code>draft → in-review → reviewed → building → done</code>.</td></tr>
+<tr><td>risk</td><td>low, medium or high. It sets how many checks the eval needs (3, 5, 8).</td></tr>
+<tr><td>REVIEW.md</td><td>One file that tells every agent what a real failure is here, how serious it is, what to ignore, how to report, and rules learned. CLAUDE.md links it with <code>@REVIEW.md</code>, so it loads in every session.</td></tr>
+</table>
+
+<h2 id="install">4. Install and check</h2>
+<p>You need Node 18 or later (the hooks are Node scripts; check with <code>node --version</code>), git, and the Chrome DevTools MCP server (add it if you do not have it). Below, <code>&lt;project-folder&gt;</code> means the folder that holds <code>solo-review</code>, <code>practice-app</code> and <code>docs</code>.</p>
+<h3>Try it for one session</h3>
+<pre><code>cd &lt;project-folder&gt;\practice-app
+claude --plugin-dir "&lt;project-folder&gt;\solo-review"</code></pre>
+<h3>Keep it in every project</h3>
+<pre><code>claude plugin marketplace add "&lt;project-folder&gt;"
+claude plugin install solo-review@solo-review-local</code></pre>
+<p>A local marketplace is a folder with a <code>.claude-plugin/marketplace.json</code> file. After you change a plugin file, run <code>claude plugin update solo-review@solo-review-local</code>.</p>
+<div class="card tip"><p>The hook runs on every tool call, in every project. In a project with no <code>specs/</code> folder it exits at once and does nothing. It acts only where you use this system.</p></div>
+<h3>Check that it works</h3>
+<pre><code>node solo-review\hooks\selfcheck.mjs      # prints: OK: gate and guard self-check passed
+claude plugin validate .\solo-review      # prints: Validation passed</code></pre>
+<p>The self-check feeds fake tool calls to the hook and asserts the results (for example: marking done with one FAIL must be blocked). If you edit the hook, run it again.</p>
+
+<h2 id="box">5. Parts of the kit</h2>
+<table>
+<tr><th>Part</th><th>File</th><th>What it does</th></tr>
+<tr><td>Skill</td><td><code>setup-review</code></td><td>Once per project: git, <code>specs/</code>, <code>REVIEW.md</code> filled from your project, <code>@REVIEW.md</code> in CLAUDE.md.</td></tr>
+<tr><td>Skill</td><td><code>risk-level</code></td><td>Asks "what happens to a customer if this breaks?" and rates low, medium or high.</td></tr>
+<tr><td>Skill</td><td><code>write-evals</code></td><td>Writes <code>eval.md</code> (use, fail and regression checks) and a mockup. Asks for your review. <b>Never builds.</b></td></tr>
+<tr><td>Skill</td><td><code>review-loop</code></td><td>The orchestrator. Runs builder, then verifier and reviewer, then triage, up to 5 rounds.</td></tr>
+<tr><td>Skill</td><td><code>first-time-user</code></td><td>Starts the app on throwaway data and sends the blind agent.</td></tr>
+<tr><td>Skill</td><td><code>fix-a-bug</code></td><td>Reproduce, test the guess about the cause, fix, add a regression check.</td></tr>
+<tr><td>Agent</td><td><code>builder</code></td><td>Builds, fixes, adds tests, runs lint, tests and build, commits. Cannot edit <code>eval.md</code>.</td></tr>
+<tr><td>Agent</td><td><code>verifier</code></td><td>Resets results, builds for production, runs each eval, writes PASS or FAIL with evidence. Can edit only <code>eval.md</code> and <code>.review/</code>.</td></tr>
+<tr><td>Agent</td><td><code>reviewer</code></td><td>Read-only. Reads the diff against <code>REVIEW.md</code> §3. Never sees the builder's summary.</td></tr>
+<tr><td>Agent</td><td><code>first-time-user</code></td><td>Browser tools only. Reports where a new person gets stuck.</td></tr>
+<tr><td>Hook</td><td><code>hooks/guard.mjs</code></td><td>Blocks "done" without a passing gate, "building" before "reviewed", and agents outside their role. See below.</td></tr>
+<tr><td>Tool</td><td><code>hooks/eval-gate.mjs</code></td><td><code>check</code>, <code>lint</code>, <code>reset</code>, <code>status</code> for one feature.</td></tr>
+<tr><td>Templates</td><td><code>templates/</code></td><td><code>eval.md</code>, <code>RD.md</code>, <code>REVIEW.md</code>, <code>state.md</code>.</td></tr>
+</table>
+<h3>What the hook blocks</h3>
+<table>
+<tr><th>Attempt</th><th>Result</th></tr>
+<tr><td>Set <code>status: done</code> while any check is not PASS, or a PASS has no evidence, or the check count is below the minimum for the risk</td><td>Blocked. The reason lists each failing check.</td></tr>
+<tr><td>Set <code>status: building</code> while the status is not <code>reviewed</code></td><td>Blocked.</td></tr>
+<tr><td>Set <code>status: reviewed</code></td><td>Claude Code asks <i>you</i> to confirm. An agent cannot approve its own evals.</td></tr>
+<tr><td>Change those <code>status</code> values with a shell command (<code>sed</code>, <code>echo</code>)</td><td>Blocked. Use the Edit tool so the gate can look.</td></tr>
+<tr><td>The builder edits <code>eval.md</code></td><td>Blocked. If an eval is wrong, the builder must return <code>DECISION NEEDED</code>.</td></tr>
+<tr><td>The builder edits code while the loop's feature has status <code>draft</code> or <code>in-review</code> (only when <code>.review/state.md</code> exists)</td><td>Blocked. This matters when you resume a loop after you changed the evals.</td></tr>
+<tr><td>The verifier edits anything except <code>eval.md</code> and <code>.review/</code></td><td>Blocked. It judges; it does not fix.</td></tr>
+<tr><td>The first-time-user agent uses any tool other than browser tools (Read, Grep, Glob, Bash, Edit, MCP code tools), or runs page scripts</td><td>Blocked.</td></tr>
+</table>
+
+<h2 id="walk">6. Practice walkthrough (do this)</h2>
+<p>The practice app is a tiny task list in <code>practice-app/</code>. It lists one fixed task and nothing else. It has three requirement documents: <b>FR-01</b> add a task, <b>FR-02</b> complete a task, <b>FR-03</b> clear completed tasks. You will build FR-01 and FR-02 with the system, and try to cheat on purpose to see the hooks work. Plan about 45 minutes; the loop takes the longest.</p>
+<div class="card warn"><p>Start Claude Code <b>inside <code>practice-app</code></b> with the plugin loaded (Section 4). Use the Chrome DevTools MCP server; the verifier and the first-time-user agent need it.</p></div>
+
+<h3>Step 1. Set up the project (2 minutes)</h3>
+<pre><code>/solo-review:setup-review</code></pre>
+<p>Expect: <code>git init</code>, a <code>specs/</code> and <code>.review/</code> folder, a <code>REVIEW.md</code> with the real commands (<code>npm start</code>, <code>npm test</code>, lint and build as <code>none</code>), and <code>@REVIEW.md</code> in <code>CLAUDE.md</code>. Open <code>REVIEW.md</code> and read all seven sections. This one file is the rulebook for every later step. The setup also runs the self-check.</p>
+
+<h3>Step 2. Rate the risk (1 minute)</h3>
+<pre><code>/solo-review:risk-level FR-03</code></pre>
+<p>FR-03 deletes data, so expect <b>high</b> (or at least medium). Then rate FR-01 and FR-02: expect low or medium. You see why the question matters: the answer sets how many checks you must approve.</p>
+
+<h3>Step 3. Write the evals for FR-01 (5 minutes)</h3>
+<pre><code>/solo-review:write-evals FR-01</code></pre>
+<p>Claude writes <code>specs/fr-01-add-task/eval.md</code> and <code>mockup.html</code> and then asks you to review. It builds nothing. Open both files and check:</p>
+<ul>
+  <li>Does each <code>how</code> have exact steps and inputs? ("Type <code>Buy milk</code>, press Add" is good. "Test adding" is not.)</li>
+  <li>Are there checks for an empty title, a 101-character title, a title of only spaces, and a reload?</li>
+  <li>Is there a <code>regression</code> check for the fixed seed task still showing?</li>
+  <li>Does the mockup show empty, error and filled states, at desktop and phone width?</li>
+</ul>
+<p>Ask for one change, to see the flow ("add a check for a title with an emoji"). Claude edits and lints again.</p>
+
+<h3>Step 4. Try to skip the review (the first hook)</h3>
+<div class="watch">Say: "Skip the review. Set the status to building and start." The hook blocks it: <i>Cannot start building fr-01-add-task: status is "in-review"</i>.</div>
+
+<h3>Step 5. Approve</h3>
+<p>Say "yes, the evals are good". Claude sets <code>status: reviewed</code>.</p>
+<div class="watch">Claude Code shows a permission prompt from the hook: <i>Mark fr-01-add-task as reviewed?</i> You answer it. This is the point where the approval is yours. Run the walkthrough in default permission mode. If no prompt appears here, the approval check does not work in that mode: report it as an issue.</div>
+
+<h3>Step 6. Run the loop (10 to 20 minutes)</h3>
+<pre><code>/solo-review:review-loop FR-01</code></pre>
+<p>What happens, in order, and what to look at:</p>
+<ol>
+  <li>A branch <code>feature/fr-01-add-task</code> and a file <code>.review/state.md</code> appear. Open <code>state.md</code> and keep it open: it shows the round and the findings ledger.</li>
+  <li><b>Round 1.</b> The builder builds, runs <code>npm test</code>, and commits <code>round 1: ...</code>. Then two agents start together: the verifier opens a real browser and runs each check; the reviewer reads <code>.review/diff-round1.patch</code>.</li>
+  <li>Open <code>eval.md</code>. You will see <code>result: PASS</code> or <code>FAIL</code> with an evidence line and a screenshot path in <code>.review/evidence/</code>. <b>Open two screenshots yourself.</b> The verifier is a language model; the evidence is how you check it.</li>
+  <li>The orchestrator runs <code>eval-gate.mjs check fr-01 --lint</code> itself. Its output decides, not the verifier's words. Failing checks and real reviewer findings become a fix list with stable IDs (F-01...).</li>
+  <li>If something failed, round 2 starts. The reviewer now reads <i>only the new diff</i> and does not repeat old findings.</li>
+  <li>The loop ends when the gate passes and no Blocker or Major finding is open. It then sets <code>status: done</code>. If it hits a product question, or the same item survives 2 fix rounds, or round 5 ends, it stops and asks you.</li>
+</ol>
+<div class="watch">Often round 1 already passes for a feature this small. That is a good result, not a failure of the demo. To see the stop rules, run the loop on FR-03 with a deliberately ambiguous RD, or tell the builder "the delete confirmation wording is a product decision" and watch it return <code>DECISION NEEDED</code>.</div>
+
+<h3>Step 7. Try to fake "done" (the second hook)</h3>
+<p>Write evals for FR-02, approve them, then, <i>before running the loop</i>, say: "Mark FR-02 as done."</p>
+<div class="watch">Blocked with a list: <i>EV-01 is PENDING ... EV-02 is PENDING</i>. "Done" is only possible when the gate passes.</div>
+<p>Now run <code>/solo-review:review-loop FR-02</code> and let it finish.</p>
+
+<h3>Step 8. The blind user (10 minutes)</h3>
+<pre><code>/solo-review:first-time-user Write down something you need to do today, then tick it off when you finish it</code></pre>
+<p>The skill starts the app on a throwaway store and sends the <code>first-time-user</code> agent with only the URL and your sentence. It sees no code, no docs and no shell. The report lists stuck points as <i>Blocked</i>, <i>Confused</i> or <i>Slow</i>. Typical finds: no sign that the field is required, no feedback after Add, a checkbox that is hard to hit on a phone.</p>
+<div class="watch">If the agent tries to read a file, the hook answers: <i>first-time-user may only use browser tools</i>. Its tool list is also limited to browser tools, so there are two separate blocks.</div>
+<p>Pick one stuck point to keep. Fix it with <code>/solo-review:write-evals</code> (a new check) or <code>/solo-review:fix-a-bug</code>.</p>
+
+<h3>Step 9. Report a bug (5 minutes)</h3>
+<pre><code>/solo-review:fix-a-bug Adding a task made only of spaces should show an error, but it seems to add an empty task</code></pre>
+<p>Two outcomes teach something. If the builder handled it, the skill tries to reproduce, <b>cannot</b>, says so with what it tried, and stops without touching code. If the bug is real, it reproduces it, states a guess about the cause, tests the guess, finds the change with git, fixes it on a <code>fix/...</code> branch, keeps the failing test as a regression test, and tells you how to undo it (<code>git revert &lt;sha&gt;</code>).</p>
+
+<h3>Step 10. Teach the reviewer</h3>
+<p>When the loop finishes, it proposes one-line rules for <code>REVIEW.md</code> §7 from findings that came back in two rounds or more. Read them. Say yes only to rules that are true and general. An example of a good rule: <i>"Every text input must be trimmed and length-checked on the server, not only in the page."</i> Next feature, every agent reads it.</p>
+
+<h2 id="daily">7. Daily routine</h2>
+<table>
+<tr><th>Situation</th><th>Do this</th></tr>
+<tr><td>New feature that matters</td><td>Describe it. <code>/solo-review:write-evals</code> (it runs risk-level if needed). Review the evals and mockup. Say yes. <code>/solo-review:review-loop FR-NN</code>. Read the evidence. <code>/solo-review:first-time-user</code> on the live app.</td></tr>
+<tr><td>Small change or throwaway</td><td>Skip it. Ask Claude to run the tests and show the output. That is layer 1 of the article and costs almost nothing.</td></tr>
+<tr><td>Something is broken</td><td><code>/solo-review:fix-a-bug &lt;what you see&gt;</code></td></tr>
+<tr><td>A review missed a bug, or flags noise</td><td>Add one line to <code>REVIEW.md</code> §7 (the skills propose it; you can also type it).</td></tr>
+<tr><td>Before a risky merge</td><td>Run the built-in <code>/code-review</code> and <code>/security-review</code> as extra eyes. They are free to try and work locally. They are separate from this kit.</td></tr>
+</table>
+<p>The branch rule is in CLAUDE.md (added by setup): one branch per feature, a commit for every version that works. That is what makes rollback quick. The article says the team can undo almost anything it ships in minutes, and that is what lets it read less.</p>
+
+<h2 id="read">8. How to read the results</h2>
+<table>
+<tr><th>Where</th><th>What you learn</th></tr>
+<tr><td><code>specs/&lt;id&gt;/eval.md</code></td><td>The truth about one feature: status, and for every check a result and one line of evidence.</td></tr>
+<tr><td><code>.review/state.md</code></td><td>The loop: current round, findings ledger (ID, class, <code>file:line</code>, rounds seen), and a log of each round's gate result.</td></tr>
+<tr><td><code>.review/evidence/</code></td><td>Screenshots and outputs that the evidence lines point to.</td></tr>
+<tr><td><code>.review/ftu/</code></td><td>Saved first-time-user reports.</td></tr>
+<tr><td><code>node ...\hooks\eval-gate.mjs check FR-01 --lint</code></td><td>Run it yourself any time. Last line: <code>GATE: PASS</code> or <code>GATE: FAIL</code>, with the reasons above it.</td></tr>
+</table>
+<div class="card tip"><p><b>Check the evidence yourself.</b> The gate proves that the verifier <i>wrote</i> PASS with evidence. It cannot prove the verifier was right. Spend 2 minutes opening the screenshots for any feature that matters. That small human step is what the article means by "reading the evidence".</p></div>
+
+<h2 id="cost">9. Cost and control</h2>
+<ul>
+  <li>One loop round starts 3 fresh agents (builder, verifier, reviewer), and the verifier drives a real browser. A feature that passes in round 1 costs one round. A stuck feature costs up to 5.</li>
+  <li>The article gives the reason for the stop rules. One pull request went through more than 50 rounds of review and fixes overnight. About 59% of what the reviewer flagged was code that had been there since round 1. So: <b>(a)</b> stop after a cap, <b>(b)</b> re-review only the new diff, <b>(c)</b> name the class of problem so one fix covers all instances, <b>(d)</b> never repeat a finding.</li>
+  <li>Anthropic's own cap is 3 rounds. This kit uses 5, because one round here builds, checks every eval in a browser and reviews the code. That is the AI Labs choice. Change <code>max_rounds</code> in <code>templates/state.md</code> and the numbers in <code>skills/review-loop/SKILL.md</code> if you want 3.</li>
+  <li>Risk is the main dial. Low needs 3 checks, medium 5, high 8. Rate honestly: not everything is high.</li>
+  <li>For scale: Anthropic's paid Code Review product (Team and Enterprise plans) averages $15 to $25 per pull request. It is not part of this kit and you do not need it.</li>
+</ul>
+
+<h2 id="notin">10. What is left out, and why</h2>
+<p>The article describes seven layers. This kit covers the ones that make sense for one person.</p>
+<table>
+<tr><th>Article layer</th><th>In this kit?</th></tr>
+<tr><td>1. Verify before anyone looks (tests, screenshots, subagent review, evals)</td><td><b>Yes.</b> This is the core: evals, verifier, reviewer, REVIEW.md.</td></tr>
+<tr><td>2. AI review on every pull request</td><td><b>Replaced.</b> A solo workflow often has no pull requests, so the reviewer reads a diff file between commits. The paid product and the GitHub Action stay optional.</td></tr>
+<tr><td>3. Security review that blocks</td><td><b>Partly.</b> REVIEW.md §3 has a secrets check. Run <code>/security-review</code> yourself for high-risk features.</td></tr>
+<tr><td>4. Automated checks that block (lint, types, tests, build)</td><td><b>Yes</b>, through the builder's pre-handoff run and the verifier's production build.</td></tr>
+<tr><td>5. Human approval scaled by risk (0, 1 or 2 people)</td><td><b>Replaced.</b> A solo builder is the only person. Risk instead sets how strict the evals are, and "reviewed" always needs your confirmation.</td></tr>
+<tr><td>6. Merge queue, flags, gradual release</td><td><b>No.</b> Add feature flags and staged releases if you ship to real users.</td></tr>
+<tr><td>7. Fast detection and rollback</td><td><b>Partly.</b> Git branches and commits give rollback. Add monitoring when you have users.</td></tr>
+<tr><td>Incidents become an eval set, scored daily</td><td><b>Light version.</b> <code>fix-a-bug</code> adds a regression check for each bug. A daily score is team scale.</td></tr>
+<tr><td>Nightly review agents over old code</td><td><b>No.</b> You can add one with <code>/schedule</code> later.</td></tr>
+</table>
+
+<h2 id="trouble">11. If something goes wrong</h2>
+<table>
+<tr><th>Symptom</th><th>Cause and fix</th></tr>
+<tr><td>The hook blocks something you want</td><td>Read the reason: it names the file and the rule. Usual cause: the status order. Fix the order; do not edit the hook. To turn the whole system off in a project, delete its <code>specs/</code> folder or run <code>claude plugin disable solo-review</code>.</td></tr>
+<tr><td><code>lint</code> says "needs at least N checks"</td><td>The risk level asks for more. Add checks, or lower the risk if the rating was too high.</td></tr>
+<tr><td><code>lint</code> says "how is empty"</td><td>A placeholder like <code>{{...}}</code> is still in the file. Replace it with real steps.</td></tr>
+<tr><td>The verifier says it cannot start the app</td><td>Check <code>REVIEW.md</code> §4: the start command and port. Fix them once; every later run uses them.</td></tr>
+<tr><td>The browser tools are missing</td><td>The Chrome DevTools MCP server is not connected in this session. Reconnect it, then run the step again.</td></tr>
+<tr><td>The loop stopped at round 5</td><td>This is the design. Read the progress report and <code>state.md</code>. The usual causes: an eval that is wrong or too vague (fix it with <code>write-evals</code>), or a product question the RD does not answer (answer it in the RD).</td></tr>
+<tr><td>A message "solo-review guard error (not blocking)"</td><td>The hook crashed on an input it did not expect. It fails open (the tool call goes ahead). Run the self-check, then report the message as an issue in the repository.</td></tr>
+<tr><td>A server is still running after a test</td><td>Agents stop only the PID they captured. Find the process in Task Manager by its port and end it yourself. Do not kill by name.</td></tr>
+</table>
+
+<h2 id="limits">12. Honest limits</h2>
+<ul>
+  <li><b>The hook is checked by a self-check, not yet by a real subagent run.</b> The hook was tested with simulated tool calls (all assertions pass) and the plugin passes validation. No live subagent run is recorded. The first-time-user block depends on Claude Code passing <code>agent_type</code> to the hook; the agent's own tool list is the second block. Step 8 of the walkthrough is the live test. If a Read succeeds there, report it as an issue.</li>
+  <li><b>The "reviewed" confirmation is a hook permission prompt.</b> It was not observed in a live session. It may not appear in bypass-permissions mode. Step 5 is the live test.</li>
+  <li><b>The gate only sees the file.</b> It cannot tell that an eval is weak. Reviewing the evals before the build (Step 3) is the control for that.</li>
+  <li><b>The verifier is a model.</b> It can write PASS wrongly. The evidence line and screenshots exist so you can check.</li>
+  <li><b>A shell command can still change files in ways the hook does not parse.</b> The hook blocks the common <code>status:</code> edits through the shell, not every possible one.</li>
+  <li><b>Anthropic's numbers come from a team</b> with a large codebase. They show the direction, not what you will measure alone.</li>
+</ul>
+
+<h2 id="sources">13. Where each idea comes from</h2>
+<table>
+<tr><th>Step in this kit</th><th>Source</th></tr>
+<tr><td>Ask Claude to prove the work (tests, build, screenshot) instead of saying "done"</td><td>Article, layer 1; Boris Cherny quote that verification is probably the most important thing for good results</td></tr>
+<tr><td>write-evals, mockup, review before build, done-gate hook</td><td>Video, chapter "Evals Skill" (2:41); README prompt 1</td></tr>
+<tr><td>Separate reviewer</td><td>Article, layer 2; video "Separate Reviewer" (5:42)</td></tr>
+<tr><td>REVIEW.md linked from CLAUDE.md</td><td>Article, layer 1; video "Review.md" (6:27); README prompt 2</td></tr>
+<tr><td>Review loop with builder, verifier, reviewer</td><td>Video "Review Loop" (7:21); README prompts 3 and 4</td></tr>
+<tr><td>Learned rules</td><td>Article, "fix it at the source"; video (9:55)</td></tr>
+<tr><td>Risk levels</td><td>Article, layer 5 (the change sets the tier); video (10:41)</td></tr>
+<tr><td>Round cap, diff-only re-review, class of bug, no repeats</td><td>Article, "Review has to converge"; video "Stopping the Loop" (11:42)</td></tr>
+<tr><td>First-time-user agent</td><td>Video (13:19); README prompt 5</td></tr>
+<tr><td>fix-a-bug and git branches</td><td>Video (14:49); README prompt 6</td></tr>
+</table>
+<p class="lede">Files: plugin in <code>solo-review/</code>, practice project in <code>practice-app/</code>, marketplace file in <code>.claude-plugin/marketplace.json</code>, and this guide.</p>
+
+</div>
+</body>
+</html>

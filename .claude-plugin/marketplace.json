@@ -1,0 +1,11 @@
+{
+  "name": "solo-review-local",
+  "owner": { "name": "solo-review-local" },
+  "plugins": [
+    {
+      "name": "solo-review",
+      "source": "./solo-review",
+      "description": "Solo code-review system: evals, hooks, a builder/verifier/reviewer loop, a first-time-user test and a bug-fix skill."
+    }
+  ]
+}

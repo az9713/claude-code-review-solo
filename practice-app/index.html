@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tasks</title>
+<style>
+  body { font: 16px system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+  li { padding: .4rem 0; }
+</style>
+</head>
+<body>
+  <h1>Tasks</h1>
+  <ul id="list"></ul>
+  <script>
+    fetch('/api/tasks').then(r => r.json()).then(tasks => {
+      document.getElementById('list').innerHTML = tasks.map(t => `<li>${t.title}</li>`).join('');
+    });
+  </script>
+</body>
+</html>
