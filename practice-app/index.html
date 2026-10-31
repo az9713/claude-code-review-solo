@@ -14,7 +14,8 @@
   <ul id="list"></ul>
   <script>
     fetch('/api/tasks').then(r => r.json()).then(tasks => {
-      document.getElementById('list').innerHTML = tasks.map(t => `<li>${t.title}</li>`).join('');
+      const list = document.getElementById('list');
+      list.replaceChildren(...tasks.map(t => Object.assign(document.createElement('li'), { textContent: t.title })));
     });
   </script>
 </body>
