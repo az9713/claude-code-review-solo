@@ -4,6 +4,8 @@ A code-review system for one person who builds with coding agents. It is a Claud
 
 **Live guide: https://az9713.github.io/claude-code-review-solo/**
 
+Based on the AI Labs video ["Claude Code says the task is done, but is it?"](https://www.youtube.com/watch?v=S49gppZl8H0) and the Anthropic article it builds on. See [Sources](#sources).
+
 An agent writes a lot of code, says "done", and misses things that were asked for. This project gives the agent a way to prove each feature works, and makes agents other than the builder judge the proof. It needs no pull requests and no team.
 
 ## Sources
@@ -14,7 +16,7 @@ This project is an independent implementation of ideas from these sources. It is
 | --- | --- |
 | Anthropic engineering blog, **"How the Claude Code team does code review"**, by Addy Osmani, Morgan Westlee Lunt and Qing Wang, Oct 15, 2026 (`claude.dev/blog/solving-code-review-at-anthropic/`) | The layered model of review, risk-scaled approval, review that must converge (round cap, diff-only re-review, class of bug, no repeat findings), `REVIEW.md`, and fixing repeat mistakes at the source. |
 | Anthropic announcement, **"Bringing Code Review to Claude Code"**, Mar 9, 2026 | The multi-agent Code Review product: agents look for bugs in parallel, other agents verify them, findings are ranked by severity. Used as background and as the contrast for cost. |
-| AI Labs video, **"Claude Code says the task is done, but is it?"** (`youtube.com/watch?v=S49gppZl8H0`) | The workflow turned into prompts and skills: write-evals with a mockup, a separate reviewer, `REVIEW.md` linked from `CLAUDE.md`, the builder/verifier/reviewer loop, learned rules, risk levels, the stop rules, the first-time-user test and the fix-a-bug skill. |
+| AI Labs video, [**"Claude Code says the task is done, but is it?"**](https://www.youtube.com/watch?v=S49gppZl8H0) (15 min 50 s, channel AI Labs) | The workflow turned into prompts and skills: write-evals with a mockup, a separate reviewer, `REVIEW.md` linked from `CLAUDE.md`, the builder/verifier/reviewer loop, learned rules, risk levels, the stop rules, the first-time-user test and the fix-a-bug skill. |
 
 ## What this project is
 
